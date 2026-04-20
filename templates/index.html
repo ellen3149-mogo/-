@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flask + C 踩地雷</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <h1>踩地雷（Flask 前端 + C 後端）</h1>
+
+        {% if error %}
+            <div class="alert">{{ error }}</div>
+        {% endif %}
+
+        <section class="panel">
+            <h2>新遊戲設定</h2>
+            <form method="post" action="{{ url_for('new_game') }}" class="settings">
+                <label>列數
+                    <input type="number" name="rows" min="5" max="30" value="9" required>
+                </label>
+                <label>行數
+                    <input type="number" name="cols" min="5" max="30" value="9" required>
+                </label>
+                <label>地雷數
+                    <input type="number" name="mines" min="1" max="200" value="10" required>
+                </label>
+                <button type="submit">開始新遊戲</button>
+            </form>
+        </section>
+
+        {% if game %}
+            <section class="panel">
+                <div class="status">
+                    <span>尺寸：{{ game.rows }} x {{ game.cols }}</span>
+                    <span>地雷：{{ game.mines }}</span>
+                    <span>已翻開：{{ game.revealed }}</span>
+                </div>
+
+                {% if game.game_over and game.won %}
+                    <p class="result win">恭喜！你已清空所有安全格。</p>
+                {% elif game.game_over and not game.won %}
+                    <p class="result lose">踩到地雷，遊戲結束。</p>
+                {% endif %}
+
+                <div class="board">
+                    {% for r in range(game.rows) %}
+                        <div class="row">
+                            {% for c in range(game.cols) %}
+                                {% set cell = game.board[r][c] %}
+                                <div class="cell {{ 'revealed' if cell != '#' and cell != 'F' else '' }}">
+                                    {% if not game.game_over and (cell == '#' or cell == 'F') %}
+                                        <form method="post" action="{{ url_for('action') }}">
+                                            <input type="hidden" name="row" value="{{ r }}">
+                                            <input type="hidden" name="col" value="{{ c }}">
+                                            <input type="hidden" name="action" value="reveal" class="action-input">
+                                            <button
+                                                type="submit"
+                                                class="cell-btn {{ 'flagged' if cell == 'F' else '' }}"
+                                                data-flagged="{{ 'true' if cell == 'F' else 'false' }}"
+                                                title="左鍵翻開，右鍵插旗">
+                                                {{ 'F' if cell == 'F' else '' }}
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="value">{{ cell }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+    </main>
+    <script>
+        document.querySelectorAll(".cell form").forEach((form) => {
+            const button = form.querySelector(".cell-btn");
+            const actionInput = form.querySelector(".action-input");
+            if (!button || !actionInput) {
+                return;
+            }
+
+            form.addEventListener("submit", () => {
+                actionInput.value = "reveal";
+            });
+
+            button.addEventListener("contextmenu", (event) => {
+                event.preventDefault();
+                actionInput.value = "flag";
+                form.submit();
+            });
+
+            button.addEventListener("click", (event) => {
+                const isFlagged = button.dataset.flagged === "true";
+                if (isFlagged) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
