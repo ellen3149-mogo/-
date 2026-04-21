@@ -1,4 +1,4 @@
-#踩地雷 Minesweeper (Flask × C)
+##踩地雷 Minesweeper (Flask × C)
 
 此專案示範：
 - **前端/控制層**：Python Flask
