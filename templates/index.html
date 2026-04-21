@@ -3,102 +3,54 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Flask + C 踩地雷</title>
+    <title>踩地雷 Minesweeper</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <main class="container">
-        <h1>踩地雷（Flask 前端 + C 後端）</h1>
-
-        {% if error %}
-            <div class="alert">{{ error }}</div>
-        {% endif %}
+        <h1>踩地雷（Flask + C）</h1>
+        <p class="subtitle">左鍵翻格，右鍵插旗，操作模式接近老師範例。</p>
 
         <section class="panel">
-            <h2>新遊戲設定</h2>
-            <form method="post" action="{{ url_for('new_game') }}" class="settings">
+            <h2>新遊戲</h2>
+            <form id="new-game-form" class="settings">
                 <label>列數
-                    <input type="number" name="rows" min="5" max="30" value="9" required>
+                    <input id="rows" type="number" min="5" max="30" value="9" required>
                 </label>
                 <label>行數
-                    <input type="number" name="cols" min="5" max="30" value="9" required>
+                    <input id="cols" type="number" min="5" max="30" value="9" required>
                 </label>
                 <label>地雷數
-                    <input type="number" name="mines" min="1" max="200" value="10" required>
+                    <input id="mines" type="number" min="1" value="10" required>
                 </label>
-                <button type="submit">開始新遊戲</button>
+                <button type="submit">開始</button>
+                <button id="undo-btn" type="button">上一步 (Undo)</button>
             </form>
+            <div id="error" class="alert hidden"></div>
         </section>
 
-        {% if game %}
-            <section class="panel">
-                <div class="status">
-                    <span>尺寸：{{ game.rows }} x {{ game.cols }}</span>
-                    <span>地雷：{{ game.mines }}</span>
-                    <span>已翻開：{{ game.revealed }}</span>
-                </div>
+        <section class="panel">
+            <div id="status" class="status hidden"></div>
+            <div id="timer" class="timer hidden"></div>
+            <div id="best-record" class="best hidden"></div>
+            <p id="result" class="result hidden"></p>
+            <div id="board" class="board"></div>
+        </section>
 
-                {% if game.game_over and game.won %}
-                    <p class="result win">恭喜！你已清空所有安全格。</p>
-                {% elif game.game_over and not game.won %}
-                    <p class="result lose">踩到地雷，遊戲結束。</p>
-                {% endif %}
+        <section class="panel">
+            <h2>多人 / 多盤 Session</h2>
+            <div class="session-row">
+                <button id="refresh-games-btn" type="button">更新列表</button>
+                <span id="active-game-hint" class="active-hint"></span>
+            </div>
+            <ul id="game-list" class="game-list"></ul>
+        </section>
 
-                <div class="board">
-                    {% for r in range(game.rows) %}
-                        <div class="row">
-                            {% for c in range(game.cols) %}
-                                {% set cell = game.board[r][c] %}
-                                <div class="cell {{ 'revealed' if cell != '#' and cell != 'F' else '' }}">
-                                    {% if not game.game_over and (cell == '#' or cell == 'F') %}
-                                        <form method="post" action="{{ url_for('action') }}">
-                                            <input type="hidden" name="row" value="{{ r }}">
-                                            <input type="hidden" name="col" value="{{ c }}">
-                                            <input type="hidden" name="action" value="reveal" class="action-input">
-                                            <button
-                                                type="submit"
-                                                class="cell-btn {{ 'flagged' if cell == 'F' else '' }}"
-                                                data-flagged="{{ 'true' if cell == 'F' else 'false' }}"
-                                                title="左鍵翻開，右鍵插旗">
-                                                {{ 'F' if cell == 'F' else '' }}
-                                            </button>
-                                        </form>
-                                    {% else %}
-                                        <span class="value">{{ cell }}</span>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
+        <section class="panel">
+            <h2>操作歷史 (Linked List)</h2>
+            <ol id="history-list" class="history-list"></ol>
+        </section>
     </main>
-    <script>
-        document.querySelectorAll(".cell form").forEach((form) => {
-            const button = form.querySelector(".cell-btn");
-            const actionInput = form.querySelector(".action-input");
-            if (!button || !actionInput) {
-                return;
-            }
-
-            form.addEventListener("submit", () => {
-                actionInput.value = "reveal";
-            });
-
-            button.addEventListener("contextmenu", (event) => {
-                event.preventDefault();
-                actionInput.value = "flag";
-                form.submit();
-            });
-
-            button.addEventListener("click", (event) => {
-                const isFlagged = button.dataset.flagged === "true";
-                if (isFlagged) {
-                    event.preventDefault();
-                }
-            });
-        });
-    </script>
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
 </body>
 </html>
